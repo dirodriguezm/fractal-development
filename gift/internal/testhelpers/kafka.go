@@ -50,7 +50,7 @@ func ConsumeMessages(consumer *kafka.Consumer) []kafka.Message {
 	return messages
 }
 
-func CreateProducer(bootstrapServers string, topic string) (*kafka.Producer, error) {
+func CreateProducer(bootstrapServers string) (*kafka.Producer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": bootstrapServers,
 		"acks":              "all",
