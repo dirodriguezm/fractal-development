@@ -49,3 +49,30 @@ func ConsumeMessages(consumer *kafka.Consumer) []kafka.Message {
 	}
 	return messages
 }
+
+func CreateProducer(bootstrapServers string, topic string) (*kafka.Producer, error) {
+	p, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": bootstrapServers,
+		"acks":              "all",
+	})
+	if err != nil {
+		log.Printf("Could not create kafka producer with bootstrap.servers: %s", bootstrapServers)
+		return nil, err
+	}
+	return p, nil
+}
+
+func ProduceMessages(p *kafka.Producer, topic string, messages [][]byte) error {
+	for i := 0; i < len(messages); i++ {
+		err := p.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+				Value: []byte(messages[i]),
+			},
+			nil,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
