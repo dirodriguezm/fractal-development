@@ -54,15 +54,15 @@ func (suite *TestKafkaConsumerTestSuite) TestDeserializeMessage() {
 		"bootstrap.servers": suite.kafkaContainer.Brokers[0],
 		"group.id": "test",
 	}
-	kafkaConsumer, err := NewKafkaConsumer(config, suite.testSchema)
-	assert.NoError(t, err)
-	assert.NotNil(t, kafkaConsumer)
-	schema, err := avro.Parse(suite.testSchema)
-	assert.NoError(t, err)
 	type SimpleRecord struct {
 		A int64  `avro:"a"`
 		B string `avro:"b"`
 	}
+	kafkaConsumer, err := NewKafkaConsumer[SimpleRecord](config, suite.testSchema)
+	assert.NoError(t, err)
+	assert.NotNil(t, kafkaConsumer)
+	schema, err := avro.Parse(suite.testSchema)
+	assert.NoError(t, err)
 	simple := SimpleRecord{A: 27, B: "foo"}
 	b, err := avro.Marshal(schema, simple)
 	assert.NoError(t, err)

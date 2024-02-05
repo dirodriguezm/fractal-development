@@ -7,13 +7,13 @@ import (
 	"github.com/hamba/avro"
 )
 
-type KafkaAvroConsumer struct {
+type KafkaAvroConsumer[T any] struct {
 	config kafka.ConfigMap
 	Consumer *kafka.Consumer
 	schema avro.Schema
 }
 
-func NewKafkaConsumer(config kafka.ConfigMap, schema string) (*KafkaAvroConsumer, error) {
+func NewKafkaConsumer[T any](config kafka.ConfigMap, schema string) (*KafkaAvroConsumer[T], error) {
 	consumer, err := kafka.NewConsumer(&config)
 	if err != nil {
 		log.Printf("Failed to create consumer: %s", err)
@@ -24,14 +24,14 @@ func NewKafkaConsumer(config kafka.ConfigMap, schema string) (*KafkaAvroConsumer
 		log.Printf("Failed to parse schema: %s", err)
 		return nil, err
 	}
-	return &KafkaAvroConsumer{
+	return &KafkaAvroConsumer[T]{
 		config: config,
 		Consumer: consumer,
 		schema: parsedSchema,
 	}, nil
 }
 
-func (c *KafkaAvroConsumer) DeserializeMessage(msg []byte, v interface{}) error {
+func (c *KafkaAvroConsumer[T]) DeserializeMessage(msg []byte, v *T) error {
 	err := avro.Unmarshal(c.schema, msg, v)
 	if err != nil {
 		return err
@@ -39,3 +39,4 @@ func (c *KafkaAvroConsumer) DeserializeMessage(msg []byte, v interface{}) error 
 	return nil
 }
 
+// func (c *KafkaAvroConsumer[T]) Consume() []T{}
