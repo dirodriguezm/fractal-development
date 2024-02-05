@@ -8,7 +8,7 @@ import (
 	"github.com/hamba/avro"
 )
 
-type KafkaProducer struct {
+type KafkaAvroProducer struct {
 	config   kafka.ConfigMap
 	topic    string
 	key      []byte
@@ -16,7 +16,7 @@ type KafkaProducer struct {
 	schema   avro.Schema
 }
 
-func (kp *KafkaProducer) SerializeMessage(msg interface{}) ([]byte, error) {
+func (kp *KafkaAvroProducer) SerializeMessage(msg interface{}) ([]byte, error) {
 	data, err := avro.Marshal(kp.schema, msg)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (kp *KafkaProducer) SerializeMessage(msg interface{}) ([]byte, error) {
 	return data, nil
 }
 
-func NewKafkaProducer(config kafka.ConfigMap, topic string, schema string, key []byte) (*KafkaProducer, error) {
+func NewKafkaProducer(config kafka.ConfigMap, topic string, schema string, key []byte) (*KafkaAvroProducer, error) {
 	producer, err := kafka.NewProducer(&config)
 	if err != nil {
 		log.Printf("Failed to create producer: %s", err)
@@ -35,7 +35,7 @@ func NewKafkaProducer(config kafka.ConfigMap, topic string, schema string, key [
 		log.Printf("Failed to parse schema: %s", err)
 		return nil, err
 	}
-	kp := KafkaProducer{
+	kp := KafkaAvroProducer{
 		config:   config,
 		topic:    topic,
 		key:      key,
@@ -60,7 +60,7 @@ func handleEvents(events chan kafka.Event) {
 	}
 }
 
-func (kp *KafkaProducer) Produce(msg interface{}) {
+func (kp *KafkaAvroProducer) Produce(msg interface{}) {
 	go handleEvents(kp.Producer.Events())
 	topicpartition := kafka.TopicPartition{Topic: &kp.topic, Partition: kafka.PartitionAny}
 	serializedMsg, err := kp.SerializeMessage(msg)

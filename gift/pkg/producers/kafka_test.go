@@ -52,7 +52,7 @@ func (suite *TestKafkaProducerTestSuite) TestSerializeMessage() {
 	}
 	toParse := Record{A: 1, B: "test"}
 	parsedSchema := avro.MustParse(suite.testSchema)
-	kp := KafkaProducer{
+	kp := KafkaAvroProducer{
 		schema: parsedSchema,
 	}
 	serialized, err := kp.SerializeMessage(toParse)
@@ -70,7 +70,6 @@ func (suite *TestKafkaProducerTestSuite) TestSerializeMessage() {
 	if out.B != "test" {
 		log.Fatal("Deserialized value does not match the initial value")
 	}
-
 }
 
 func (suite *TestKafkaProducerTestSuite) TestNewKafkaProducer() {
