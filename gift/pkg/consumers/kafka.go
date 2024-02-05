@@ -8,9 +8,9 @@ import (
 )
 
 type KafkaAvroConsumer[T any] struct {
-	config kafka.ConfigMap
+	config   kafka.ConfigMap
 	Consumer *kafka.Consumer
-	schema avro.Schema
+	schema   avro.Schema
 }
 
 func NewKafkaConsumer[T any](config kafka.ConfigMap, schema string) (*KafkaAvroConsumer[T], error) {
@@ -25,9 +25,9 @@ func NewKafkaConsumer[T any](config kafka.ConfigMap, schema string) (*KafkaAvroC
 		return nil, err
 	}
 	return &KafkaAvroConsumer[T]{
-		config: config,
+		config:   config,
 		Consumer: consumer,
-		schema: parsedSchema,
+		schema:   parsedSchema,
 	}, nil
 }
 
@@ -39,4 +39,6 @@ func (c *KafkaAvroConsumer[T]) DeserializeMessage(msg []byte, v *T) error {
 	return nil
 }
 
-// func (c *KafkaAvroConsumer[T]) Consume() []T{}
+// func (c *KafkaAvroConsumer[T]) Consume() []T {
+//
+// }
