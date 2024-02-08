@@ -60,16 +60,17 @@ func handleEvents(events chan kafka.Event) {
 	}
 }
 
-func (kp *KafkaAvroProducer) Produce(msg interface{}) {
+func (kp *KafkaAvroProducer) Produce(msg interface{}) error {
 	go handleEvents(kp.Producer.Events())
 	topicpartition := kafka.TopicPartition{Topic: &kp.topic, Partition: kafka.PartitionAny}
 	serializedMsg, err := kp.SerializeMessage(msg)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	kp.Producer.Produce(&kafka.Message{
 		TopicPartition: topicpartition,
 		Key:            kp.key,
 		Value:          serializedMsg,
 	}, nil)
+	return nil
 }

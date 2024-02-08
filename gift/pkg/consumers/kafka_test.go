@@ -66,7 +66,7 @@ func (suite *TestKafkaConsumerTestSuite) TestDeserializeMessage() {
 	b, err := avro.Marshal(schema, simple)
 	assert.NoError(t, err)
 	result := SimpleRecord{}
-	err = kafkaConsumer.DeserializeMessage(b, &result)
+	err = kafkaConsumer.deserializeMessage(b, &result)
 	assert.NoError(t, err)
 	assert.ObjectsAreEqual(result, simple)
 }

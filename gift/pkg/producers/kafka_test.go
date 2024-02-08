@@ -97,7 +97,10 @@ func (suite *TestKafkaProducerTestSuite) TestProduce() {
 		B string `avro:"b"`
 	}
 	msg := Record{A: 1, B: "test"}
-	kafkaProducer.Produce(msg)
+	err = kafkaProducer.Produce(msg)
+	if err != nil {
+		t.Fatalf("Could not create Produce message: %s", err)
+	}
 	kafkaProducer.Producer.Flush(1000)
 	consumer, err := testhelpers.CreateConsumer([]string{"test_topic"}, brokers[0], "testproduce")
 	if err != nil {

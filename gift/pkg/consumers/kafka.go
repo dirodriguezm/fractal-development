@@ -37,7 +37,7 @@ func NewKafkaConsumer[T any](config kafka.ConfigMap, schema string, topics []str
 	}, nil
 }
 
-func (c *KafkaAvroConsumer[T]) DeserializeMessage(msg []byte, v *T) error {
+func (c *KafkaAvroConsumer[T]) deserializeMessage(msg []byte, v *T) error {
 	err := avro.Unmarshal(c.schema, msg, v)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (c *KafkaAvroConsumer[T]) Consume() (<-chan T, <-chan error) {
 
 func (c *KafkaAvroConsumer[T]) handleMessage(e *kafka.Message, chValues chan T, chError chan error) bool {
 	var msgValue T
-	err := c.DeserializeMessage(e.Value, &msgValue)
+	err := c.deserializeMessage(e.Value, &msgValue)
 	if err != nil {
 		chError <- err
 		return false
@@ -87,4 +87,9 @@ func (c *KafkaAvroConsumer[T]) handleError(e kafka.Error, chError chan error) bo
 	log.SetOutput(os.Stdout)
 	chError <- e
 	return false
+}
+
+func (c *KafkaAvroConsumer[T]) Commit() error {
+	_, err := c.Consumer.Commit()
+	return err
 }

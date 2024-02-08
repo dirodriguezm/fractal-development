@@ -1,6 +1,6 @@
 package producers
 
-type Produce interface {
-	Produce(message map[any]any)
+type Producer interface {
+	Produce(message interface{}) error
 	SerializeMessage(msg interface{}) ([]byte, error)
 }
