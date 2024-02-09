@@ -49,15 +49,20 @@ func TestProducerTestSuite(t *testing.T) {
 
 func (suite *TestKafkaConsumerTestSuite) TestDeserializeMessage() {
 	t := suite.T()
-	config := kafka.ConfigMap{
+	kafkaConfig := kafka.ConfigMap{
 		"bootstrap.servers": suite.kafkaContainer.Brokers[0],
 		"group.id":          "test",
+	}
+	config := KafkaConsumerParams{
+		KafkaConfig: kafkaConfig,
+		Topics:      []string{"test_deserialize_message"},
+		Schema:      suite.testSchema,
 	}
 	type SimpleRecord struct {
 		A int64  `avro:"a"`
 		B string `avro:"b"`
 	}
-	kafkaConsumer, err := NewKafkaConsumer[SimpleRecord](config, suite.testSchema, []string{"test_topic"})
+	kafkaConsumer, err := NewKafkaConsumer[SimpleRecord](config)
 	assert.NoError(t, err)
 	assert.NotNil(t, kafkaConsumer)
 	schema, err := avro.Parse(suite.testSchema)
@@ -73,17 +78,22 @@ func (suite *TestKafkaConsumerTestSuite) TestDeserializeMessage() {
 
 func (suite *TestKafkaConsumerTestSuite) TestConsume() {
 	t := suite.T()
-	config := kafka.ConfigMap{
+	kafkaConfig := kafka.ConfigMap{
 		"bootstrap.servers":    suite.kafkaContainer.Brokers[0],
 		"group.id":             "test",
 		"auto.offset.reset":    "smallest",
 		"enable.partition.eof": true,
 	}
+	config := KafkaConsumerParams{
+		KafkaConfig: kafkaConfig,
+		Topics:      []string{"test_consume"},
+		Schema:      suite.testSchema,
+	}
 	type SimpleRecord struct {
 		A int64  `avro:"a"`
 		B string `avro:"b"`
 	}
-	kafkaConsumer, err := NewKafkaConsumer[SimpleRecord](config, suite.testSchema, []string{"test_consume"})
+	kafkaConsumer, err := NewKafkaConsumer[SimpleRecord](config)
 	assert.NoError(t, err)
 	assert.NotNil(t, kafkaConsumer)
 	producer, err := testhelpers.CreateProducer(suite.kafkaContainer.Brokers[0])

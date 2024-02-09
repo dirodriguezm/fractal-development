@@ -1,7 +1,8 @@
 package consumers
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"errors"
+
 	"github.com/dirodriguez/fractal-development/internal/testhelpers"
 )
 
@@ -10,37 +11,22 @@ type Consumer[T any] interface {
 	Commit() error
 }
 
+type ConsumerParams interface {
+	Validate() error
+}
+
 type ConsumerConfig struct {
 	Type   string
-	Params map[string]interface{}
+	Params ConsumerParams
 }
 
 func NewConsumer[T any](config ConsumerConfig) (Consumer[T], error) {
 	switch config.Type {
 	case "kafka":
-		return NewKafkaConsumer[T](
-			config.Params["KafkaConfig"].(kafka.ConfigMap),
-			config.Params["Schema"].(string),
-			config.Params["Topics"].([]string),
-		)
+		return NewKafkaConsumer[T](config.Params.(KafkaConsumerParams))
 	case "test":
-		if err, ok := config.Params["Error"]; ok {
-			if err == nil {
-				return testhelpers.NewTestConsumer[T](
-					config.Params["NumMessages"].(int),
-					nil,
-				)
-			}
-			return testhelpers.NewTestConsumer[T](
-				config.Params["NumMessages"].(int),
-				err.(error),
-			)
-		}
-		return testhelpers.NewTestConsumer[T](
-			config.Params["NumMessages"].(int),
-			nil,
-		)
+		return testhelpers.NewTestConsumer[T]( config.Params.(testhelpers.TestConsumerParams)), nil
 	default:
-		return nil, nil
+		return nil, errors.New("Unknown consumer type")
 	}
 }

@@ -74,10 +74,16 @@ func (suite *TestKafkaProducerTestSuite) TestSerializeMessage() {
 
 func (suite *TestKafkaProducerTestSuite) TestNewKafkaProducer() {
 	t := suite.T()
-	config := kafka.ConfigMap{
+	kafkaConfig := kafka.ConfigMap{
 		"bootstrap.servers": suite.kafkaContainer.Brokers[0],
 	}
-	kafkaProducer, err := NewKafkaProducer(config, "test_topic", suite.testSchema, nil)
+	config := KafkaProducerParams{
+		KafkaConfig: kafkaConfig,
+		Topic:       "test_topic",
+		Schema:      suite.testSchema,
+		Key: nil,
+	}
+	kafkaProducer, err := NewKafkaProducer(config)
 	assert.NoError(t, err)
 	assert.NotNil(t, kafkaProducer)
 }
@@ -85,10 +91,16 @@ func (suite *TestKafkaProducerTestSuite) TestNewKafkaProducer() {
 func (suite *TestKafkaProducerTestSuite) TestProduce() {
 	t := suite.T()
 	brokers := suite.kafkaContainer.Brokers
-	config := kafka.ConfigMap{
-		"bootstrap.servers": brokers[0],
+	kafkaConfig := kafka.ConfigMap{
+		"bootstrap.servers": suite.kafkaContainer.Brokers[0],
 	}
-	kafkaProducer, err := NewKafkaProducer(config, "test_topic", suite.testSchema, nil)
+	config := KafkaProducerParams{
+		KafkaConfig: kafkaConfig,
+		Topic:       "test_topic",
+		Schema:      suite.testSchema,
+		Key: nil,
+	}
+	kafkaProducer, err := NewKafkaProducer(config)
 	if err != nil {
 		t.Fatalf("Could not create KafkaProducer %s", err)
 	}

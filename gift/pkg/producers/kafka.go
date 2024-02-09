@@ -1,6 +1,7 @@
 package producers
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -8,12 +9,27 @@ import (
 	"github.com/hamba/avro"
 )
 
+type KafkaProducerParams struct {
+	KafkaConfig kafka.ConfigMap
+	Topic       string
+	Key         []byte
+	Schema      string
+}
+
+func (kpp KafkaProducerParams) Validate() error {
+	if kpp.Topic == "" {
+		return errors.New("Empty topic")
+	}
+	if kpp.Schema == "" {
+		return errors.New("Empty schema")
+	}
+	return nil
+}
+
 type KafkaAvroProducer struct {
-	config   kafka.ConfigMap
-	topic    string
-	key      []byte
+	config KafkaProducerParams
+	schema avro.Schema
 	Producer *kafka.Producer
-	schema   avro.Schema
 }
 
 func (kp *KafkaAvroProducer) SerializeMessage(msg interface{}) ([]byte, error) {
@@ -24,23 +40,21 @@ func (kp *KafkaAvroProducer) SerializeMessage(msg interface{}) ([]byte, error) {
 	return data, nil
 }
 
-func NewKafkaProducer(config kafka.ConfigMap, topic string, schema string, key []byte) (*KafkaAvroProducer, error) {
-	producer, err := kafka.NewProducer(&config)
+func NewKafkaProducer(config KafkaProducerParams) (*KafkaAvroProducer, error) {
+	producer, err := kafka.NewProducer(&config.KafkaConfig)
 	if err != nil {
 		log.Printf("Failed to create producer: %s", err)
 		return nil, err
 	}
-	parsedSchema, err := avro.Parse(schema)
+	parsedSchema, err := avro.Parse(config.Schema)
 	if err != nil {
 		log.Printf("Failed to parse schema: %s", err)
 		return nil, err
 	}
 	kp := KafkaAvroProducer{
-		config:   config,
-		topic:    topic,
-		key:      key,
+		config: config,
+		schema: parsedSchema,
 		Producer: producer,
-		schema:   parsedSchema,
 	}
 	return &kp, nil
 }
@@ -62,14 +76,14 @@ func handleEvents(events chan kafka.Event) {
 
 func (kp *KafkaAvroProducer) Produce(msg interface{}) error {
 	go handleEvents(kp.Producer.Events())
-	topicpartition := kafka.TopicPartition{Topic: &kp.topic, Partition: kafka.PartitionAny}
+	topicpartition := kafka.TopicPartition{Topic: &kp.config.Topic, Partition: kafka.PartitionAny}
 	serializedMsg, err := kp.SerializeMessage(msg)
 	if err != nil {
 		return err
 	}
 	kp.Producer.Produce(&kafka.Message{
 		TopicPartition: topicpartition,
-		Key:            kp.key,
+		Key:            kp.config.Key,
 		Value:          serializedMsg,
 	}, nil)
 	return nil

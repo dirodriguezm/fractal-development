@@ -8,7 +8,7 @@ import (
 
 type SimpleStep[T any, U any] struct {
 	DefaultLifeCycle[T, U]
-	config StepConfig
+	config   StepConfig
 	consumer consumers.Consumer[T]
 	producer producers.Producer
 }
@@ -18,9 +18,11 @@ func NewSimpleStep[T any, U any](config StepConfig) *SimpleStep[T, U] {
 	if err != nil {
 		panic(err)
 	}
+	producer, err := producers.NewProducer(config.ProducerConfig)
 	return &SimpleStep[T, U]{
-		config: config,
+		config:   config,
 		consumer: consumer,
+		producer: producer,
 	}
 }
 
@@ -88,25 +90,25 @@ func (s *SimpleStep[T, U]) consume() (<-chan T, <-chan error) {
 	return s.consumer.Consume()
 }
 
-func (s *SimpleStep[T, U]) preExecute(messages []T) ([]Value, error) {
+func (s *SimpleStep[T, U]) preExecute(messages []T) ([]InnerValue, error) {
 	log.Debug().Msg("SimpleStep preExecute")
 	result, err := s.PreExecute(messages)
 	return result, err
 }
 
-func (s *SimpleStep[T, U]) postExecute(messages []Value) ([]Value, error) {
+func (s *SimpleStep[T, U]) postExecute(messages []InnerValue) ([]InnerValue, error) {
 	log.Debug().Msg("SimpleStep postExecute")
 	messages, err := s.PostExecute(messages)
 	return messages, err
 }
 
-func (s *SimpleStep[T, U]) preProduce(messages []Value) ([]U, error) {
+func (s *SimpleStep[T, U]) preProduce(messages []InnerValue) ([]U, error) {
 	log.Debug().Msg("SimpleStep preProduce")
 	result, err := s.PreProduce(messages)
 	return result, err
 }
 
-func (s *SimpleStep[T, U]) produce(messages []U) ([]U, error){
+func (s *SimpleStep[T, U]) produce(messages []U) ([]U, error) {
 	log.Debug().Msg("SimpleStep produce")
 	err := s.producer.Produce(messages)
 	return messages, err

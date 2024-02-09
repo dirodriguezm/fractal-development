@@ -1,6 +1,7 @@
 package consumers
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -8,37 +9,51 @@ import (
 	"github.com/hamba/avro"
 )
 
-type KafkaAvroConsumer[T any] struct {
-	config   kafka.ConfigMap
-	Consumer *kafka.Consumer
-	schema   avro.Schema
+type KafkaConsumerParams struct {
+	KafkaConfig kafka.ConfigMap
+	Topics 	[]string
+	Schema   string
 }
 
-func NewKafkaConsumer[T any](config kafka.ConfigMap, schema string, topics []string) (*KafkaAvroConsumer[T], error) {
-	consumer, err := kafka.NewConsumer(&config)
+func (kcp KafkaConsumerParams) Validate() error {
+	if len(kcp.Topics) == 0 {
+		return errors.New("No topics provided")
+	}
+	if kcp.Schema == "" {
+		return errors.New("No schema provided")
+	}
+	return nil
+}
+
+type KafkaAvroConsumer[T any] struct {
+	Consumer *kafka.Consumer
+	Schema avro.Schema
+}
+
+func NewKafkaConsumer[T any](config KafkaConsumerParams) (*KafkaAvroConsumer[T], error) {
+	consumer, err := kafka.NewConsumer(&config.KafkaConfig)
 	if err != nil {
 		log.Printf("Failed to create consumer: %s", err)
 		return nil, err
 	}
-	parsedSchema, err := avro.Parse(schema)
+	parsedSchema, err := avro.Parse(config.Schema)
 	if err != nil {
 		log.Printf("Failed to parse schema: %s", err)
 		return nil, err
 	}
-	err = consumer.SubscribeTopics(topics, nil)
+	err = consumer.SubscribeTopics(config.Topics, nil)
 	if err != nil {
-		log.Printf("Failed to subscribe to: %s: %s", topics, err)
+		log.Printf("Failed to subscribe to: %s: %s", config.Topics, err)
 		return nil, err
 	}
 	return &KafkaAvroConsumer[T]{
-		config:   config,
 		Consumer: consumer,
-		schema:   parsedSchema,
+		Schema:   parsedSchema,
 	}, nil
 }
 
 func (c *KafkaAvroConsumer[T]) deserializeMessage(msg []byte, v *T) error {
-	err := avro.Unmarshal(c.schema, msg, v)
+	err := avro.Unmarshal(c.Schema, msg, v)
 	if err != nil {
 		return err
 	}

@@ -1,19 +1,22 @@
 package steps
 
-import "github.com/dirodriguez/fractal-development/pkg/consumers"
+import (
+	"github.com/dirodriguez/fractal-development/pkg/consumers"
+	"github.com/dirodriguez/fractal-development/pkg/producers"
+)
 
 type LifeCycle[T any, U any] interface {
 	PreConsume() error
-	PreExecute(messages []T) ([]Value, error)
-	PostExecute(messages []Value) ([]Value, error)
-	PreProduce(messages []Value) ([]U, error)
+	PreExecute(messages []T) ([]InnerValue, error)
+	PostExecute(messages []InnerValue) ([]InnerValue, error)
+	PreProduce(messages []InnerValue) ([]U, error)
 	PostProduce(messages []U) ([]U, error)
-	Execute(messages []Value) ([]Value, error)
+	Execute(messages []InnerValue) ([]InnerValue, error)
 	PostConsume() error
 	TearDown() error
 }
 
-type Value struct {
+type InnerValue struct {
 	Value interface{}
 }
 
@@ -26,11 +29,11 @@ type Step[T any, U any] interface {
 	// gets data from the consumer
 	consume() (<-chan []T, <-chan error)
 	// gets called before execute on each batch
-	preExecute(messages []T) ([]Value, error)
+	preExecute(messages []T) ([]InnerValue, error)
 	// gets called after execute on each batch
-	postExecute(messages []Value) ([]Value, error)
+	postExecute(messages []InnerValue) ([]InnerValue, error)
 	// gets called before produce on each batch
-	preProduce(messages []Value) ([]U, error)
+	preProduce(messages []InnerValue) ([]U, error)
 	// uses the producer to send the data 
 	produce(messages []U) ([]U, error)
 	// gets called after produce on each batch
@@ -48,23 +51,23 @@ func (d *DefaultLifeCycle[T, U]) PreConsume() error {
 	return nil
 }
 
-func (d *DefaultLifeCycle[T, U]) PreExecute(messages []T) ([]Value, error) {
-	var values []Value
+func (d *DefaultLifeCycle[T, U]) PreExecute(messages []T) ([]InnerValue, error) {
+	var values []InnerValue
 	for _, message := range messages {
-		values = append(values, Value{Value: message})
+		values = append(values, InnerValue{Value: message})
 	}
 	return values, nil
 }
 
-func (d *DefaultLifeCycle[T, U]) Execute(messages []Value) ([]Value, error) {
+func (d *DefaultLifeCycle[T, U]) Execute(messages []InnerValue) ([]InnerValue, error) {
 	return messages, nil
 }
 
-func (d *DefaultLifeCycle[T, U]) PostExecute(messages []Value) ([]Value, error) {
+func (d *DefaultLifeCycle[T, U]) PostExecute(messages []InnerValue) ([]InnerValue, error) {
 	return messages, nil
 }
 
-func (d *DefaultLifeCycle[T, U]) PreProduce(messages []Value) ([]U, error) {
+func (d *DefaultLifeCycle[T, U]) PreProduce(messages []InnerValue) ([]U, error) {
 	var values []U
 	for _, message := range messages {
 		values = append(values, message.Value.(U))
@@ -87,6 +90,6 @@ func (d *DefaultLifeCycle[T, U]) TearDown() error {
 type StepConfig struct {
 	BatchSize int
 	ConsumerConfig consumers.ConsumerConfig
-	ProducerConfig map[string]interface{}
+	ProducerConfig producers.ProducerConfig
 }
 
