@@ -30,7 +30,7 @@ func NewProducer(config ProducerConfig) (Producer, error) {
 			return nil, err
 		}
 	case "test":
-		p = testhelpers.NewTestProducer(config.Params.(testhelpers.TestProducerParams))
+		p = testhelpers.NewTestProducer(config.Params.(testhelpers.TestProducerConfig))
 	default:
 		return nil, errors.New("Unknown producer type")
 	}

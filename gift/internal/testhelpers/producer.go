@@ -7,19 +7,19 @@ type TestProducer struct {
 	error error
 }
 
-type TestProducerParams struct {
+type TestProducerConfig struct {
 	NumMessages int
 	Error error
 }
 
-func (p TestProducerParams) Validate() error {
+func (p TestProducerConfig) Validate() error {
 	if p.NumMessages < 0 {
 		return errors.New("NumMessages must be greater than 0")
 	}
 	return nil
 }
 
-func NewTestProducer(config TestProducerParams) *TestProducer {
+func NewTestProducer(config TestProducerConfig) *TestProducer {
 	return &TestProducer{
 		numMessages: config.NumMessages,
 		error: config.Error,
