@@ -15,14 +15,14 @@ func CreateStep(batchSize int, err error) *SimpleStep[int, int] {
 		BatchSize: batchSize,
 		ConsumerConfig: consumers.ConsumerConfig{
 			Type: "test",
-			Params: testhelpers.TestConsumerParams{
+			Params: testhelpers.TestConsumerConfig{
 				NumMessages: batchSize,
 				Error:       err,
 			},
 		},
 		ProducerConfig: producers.ProducerConfig{
 			Type:   "test",
-			Params: testhelpers.TestProducerParams{NumMessages: batchSize, Error: err},
+			Params: testhelpers.TestProducerConfig{NumMessages: batchSize, Error: err},
 		},
 	})
 }

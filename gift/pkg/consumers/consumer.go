@@ -25,7 +25,7 @@ func NewConsumer[T any](config ConsumerConfig) (Consumer[T], error) {
 	case "kafka":
 		return NewKafkaConsumer[T](config.Params.(KafkaConsumerParams))
 	case "test":
-		return testhelpers.NewTestConsumer[T]( config.Params.(testhelpers.TestConsumerParams)), nil
+		return testhelpers.NewTestConsumer[T]( config.Params.(testhelpers.TestConsumerConfig)), nil
 	default:
 		return nil, errors.New("Unknown consumer type")
 	}

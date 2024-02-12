@@ -3,22 +3,22 @@ package testhelpers
 import "errors"
 
 type TestConsumer[T any] struct {
-	config TestConsumerParams
+	config TestConsumerConfig
 }
 
-type TestConsumerParams struct {
+type TestConsumerConfig struct {
 	NumMessages int
 	Error       error
 }
 
-func (c TestConsumerParams) Validate() error {
+func (c TestConsumerConfig) Validate() error {
 	if c.NumMessages <= 0 {
 		return errors.New("NumMessages must be greater than 0")
 	}
 	return nil
 }
 
-func NewTestConsumer[T any](config TestConsumerParams) *TestConsumer[T] {
+func NewTestConsumer[T any](config TestConsumerConfig) *TestConsumer[T] {
 	return &TestConsumer[T]{config: config}
 }
 
