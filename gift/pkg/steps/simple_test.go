@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func CreateStep(batchSize int, err error) *SimpleStep[int, int] {
-	return NewSimpleStep[int, int](StepConfig{
+func CreateStep(batchSize int, err error) *SimpleStep[int, int, int] {
+	return NewSimpleStep[int, int, int](StepConfig{
 		BatchSize: batchSize,
 		ConsumerConfig: consumers.ConsumerConfig{
 			Type: "test",
@@ -29,15 +29,17 @@ func CreateStep(batchSize int, err error) *SimpleStep[int, int] {
 
 func TestPreConsume(t *testing.T) {
 	batchSize := 10
-	s := CreateStep(batchSize, nil)
-	err := s.PreConsume()
+	simpleStep := CreateStep(batchSize, nil)
+	lc := SimpleStepLifecycle[int, int, int]{simpleStep}
+	err := lc.PreConsume_()
 	assert.Nil(t, err)
 }
 
 func TestConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	chVal, chErr := s.consume()
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
 		case val := <-chVal:
@@ -51,7 +53,8 @@ func TestConsume(t *testing.T) {
 func TestConsumeWithError(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, errors.New("test error"))
-	chVal, chErr := s.consume()
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
 		case val, ok := <-chVal:
@@ -69,9 +72,10 @@ func TestConsumeWithError(t *testing.T) {
 func TestPreExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	val, err := s.PreExecute([]int{1, 2, 3})
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	val, err := lc.PreExecute_([]int{1, 2, 3})
 	for i, v := range val {
-		assert.Equal(t, i+1, v.Value)
+		assert.Equal(t, i+1, v)
 	}
 	assert.Nil(t, err)
 }
@@ -79,9 +83,10 @@ func TestPreExecute(t *testing.T) {
 func TestPostExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	val, err := s.PostExecute([]InnerValue{{Value: 1}, {Value: 2}, {Value: 3}})
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	val, err := lc.PostExecute_([]int{1, 2, 3})
 	for i, v := range val {
-		assert.Equal(t, i+1, v.Value)
+		assert.Equal(t, i+1, v)
 	}
 	assert.Nil(t, err)
 }
@@ -89,7 +94,8 @@ func TestPostExecute(t *testing.T) {
 func TestPreProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	res, err := s.PreProduce([]InnerValue{{Value: 1}, {Value: 2}, {Value: 3}})
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	res, err := lc.PreProduce_([]int{1, 2, 3})
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -99,7 +105,8 @@ func TestPreProduce(t *testing.T) {
 func TestProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	res, err := s.produce([]int{1, 2, 3})
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	res, err := lc.Produce_([]int{1, 2, 3}, s.Producer)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -109,7 +116,8 @@ func TestProduce(t *testing.T) {
 func TestPostProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	res, err := s.PostProduce([]int{1, 2, 3})
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	res, err := lc.PostProduce_([]int{1, 2, 3})
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -119,13 +127,15 @@ func TestPostProduce(t *testing.T) {
 func TestPostConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	err := s.PostConsume()
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	err := lc.PostConsume_()
 	assert.Nil(t, err)
 }
 
 func TestTearDown(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	err := s.TearDown()
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	err := lc.TearDown_()
 	assert.Nil(t, err)
 }

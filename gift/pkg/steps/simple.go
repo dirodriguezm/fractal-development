@@ -6,63 +6,106 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type SimpleStep[T any, U any] struct {
-	DefaultLifeCycle[T, U]
-	config   StepConfig
-	consumer consumers.Consumer[T]
-	producer producers.Producer
-}
-
-func NewSimpleStep[T any, U any](config StepConfig) *SimpleStep[T, U] {
-	consumer, err := consumers.NewConsumer[T](config.ConsumerConfig)
+func NewSimpleStep[Input, DTO, Output any](config StepConfig) *SimpleStep[Input, DTO, Output] {
+	consumer, err := consumers.NewConsumer[Input](config.ConsumerConfig)
 	if err != nil {
 		panic(err)
 	}
 	producer, err := producers.NewProducer(config.ProducerConfig)
-	return &SimpleStep[T, U]{
-		config:   config,
-		consumer: consumer,
-		producer: producer,
+	if err != nil {
+		panic(err)
+	}
+	return &SimpleStep[Input, DTO, Output]{
+		Config:    config,
+		Consumer:  consumer,
+		Producer:  producer,
 	}
 }
 
-func (s *SimpleStep[T, U]) Start() {
-	log.Debug().Msg("SimpleStep Start")
-	s.preConsume()
-	values, errors := s.consume()
+type SimpleStep[Input any, DTO any, Output any] struct {
+	Config    StepConfig
+	Consumer  consumers.Consumer[Input]
+	Producer  producers.Producer
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PreConsume() error {
+	return nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PreExecute(messages []Input) ([]DTO, error) {
+	var dtos []DTO
+	for _, message := range messages {
+		dtos = append(dtos, any(message).(DTO))
+	}
+	return dtos, nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) Execute(messages []DTO) ([]DTO, error) {
+	return messages, nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PostExecute(messages []DTO) ([]DTO, error) {
+	return messages, nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PreProduce(messages []DTO) ([]Output, error) {
+	var dtos []Output
+	for _, message := range messages {
+		dtos = append(dtos, any(message).(Output))
+	}
+	return dtos, nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PostProduce(messages []Output) ([]Output, error) {
+	return messages, nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) PostConsume() error {
+	return nil
+}
+
+func (s *SimpleStep[Input, DTO, Output]) TearDown() error {
+	return nil
+}
+
+
+func StartSimpleStep[Input any, DTO any, Output any](lc *SimpleStepLifecycle[Input, DTO, Output], consumer consumers.Consumer[Input], producer producers.Producer, config StepConfig) {
+	log.Debug().Msg("Step Start")
+	lc.PreConsume_()
+	values, errors := lc.Consume_(consumer)
 ConsumeLoop:
 	for {
-		batch := make([]T, 0, s.config.BatchSize)
+		batch := make([]Input, 0, config.BatchSize)
 		select {
 		case val, ok := <-values:
 			if !ok {
 				break ConsumeLoop
 			}
 			batch = append(batch, val)
-			if len(batch) < s.config.BatchSize {
+			if len(batch) < config.BatchSize {
 				continue
 			}
-			result, err := s.preExecute(batch)
+			result, err := lc.PreExecute_(batch)
 			if err != nil {
 				panic(err)
 			}
-			result, err = s.Execute(result)
+			result, err = lc.Step.Execute(result)
 			if err != nil {
 				panic(err)
 			}
-			result, err = s.postExecute(result)
+			result, err = lc.PostExecute_(result)
 			if err != nil {
 				panic(err)
 			}
-			produced, err := s.preProduce(result)
+			produced, err := lc.PreProduce_(result)
 			if err != nil {
 				panic(err)
 			}
-			produced, err = s.produce(produced)
+			produced, err = lc.Produce_(produced, producer)
 			if err != nil {
 				panic(err)
 			}
-			_, err = s.postProduce(produced)
+			_, err = lc.PostProduce_(produced)
 			if err != nil {
 				panic(err)
 			}
@@ -73,58 +116,68 @@ ConsumeLoop:
 			panic(err)
 		}
 	}
-	err := s.postConsume()
+	err := lc.PostConsume_()
 	if err != nil {
 		panic(err)
 	}
-	s.tearDown()
+	lc.TearDown_()
 }
 
-func (s *SimpleStep[T, U]) preConsume() error {
-	log.Debug().Msg("SimpleStep preConsume")
-	return s.PreConsume()
+type SimpleStepLifecycle[Input, DTO, Output any] struct {
+	Step Step[Input, DTO, Output]
 }
 
-func (s *SimpleStep[T, U]) consume() (<-chan T, <-chan error) {
-	log.Debug().Msg("SimpleStep consume")
-	return s.consumer.Consume()
+func (lc *SimpleStepLifecycle[Input ,DTO, Output]) PreConsume_() error {
+	log.Debug().Msg("Step preConsume")
+	return lc.Step.PreConsume()
 }
 
-func (s *SimpleStep[T, U]) preExecute(messages []T) ([]InnerValue, error) {
-	log.Debug().Msg("SimpleStep preExecute")
-	result, err := s.PreExecute(messages)
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) Consume_(consumer consumers.Consumer[Input]) (<-chan Input, <-chan error) {
+	log.Debug().Msg("Step consume")
+	return consumer.Consume()
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) PreExecute_(messages []Input) ([]DTO, error) {
+	log.Debug().Msg("Step preExecute")
+	result, err := lc.Step.PreExecute(messages)
 	return result, err
 }
 
-func (s *SimpleStep[T, U]) postExecute(messages []InnerValue) ([]InnerValue, error) {
-	log.Debug().Msg("SimpleStep postExecute")
-	messages, err := s.PostExecute(messages)
-	return messages, err
-}
-
-func (s *SimpleStep[T, U]) preProduce(messages []InnerValue) ([]U, error) {
-	log.Debug().Msg("SimpleStep preProduce")
-	result, err := s.PreProduce(messages)
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) Execute_(messages []DTO) ([]DTO, error) {
+	log.Debug().Msg("Step execute")
+	result, err := lc.Step.Execute(messages)
 	return result, err
 }
 
-func (s *SimpleStep[T, U]) produce(messages []U) ([]U, error) {
-	log.Debug().Msg("SimpleStep produce")
-	err := s.producer.Produce(messages)
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) PostExecute_(messages []DTO) ([]DTO, error) {
+	log.Debug().Msg("Step postExecute")
+	messages, err := lc.Step.PostExecute(messages)
 	return messages, err
 }
 
-func (s *SimpleStep[T, U]) postProduce(messages []U) ([]U, error) {
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) PreProduce_(messages []DTO) ([]Output, error) {
+	log.Debug().Msg("Step preProduce")
+	result, err := lc.Step.PreProduce(messages)
+	return result, err
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) Produce_(messages []Output, producer producers.Producer) ([]Output, error) {
+	log.Debug().Msg("Step produce")
+	err := producer.Produce(messages)
+	return messages, err
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) PostProduce_(messages []Output) ([]Output, error) {
 	log.Debug().Msg("SimpleStep postProduce")
-	return s.PostProduce(messages)
+	return lc.Step.PostProduce(messages)
 }
 
-func (s *SimpleStep[T, U]) postConsume() error {
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) PostConsume_() error {
 	log.Debug().Msg("SimpleStep postConsume")
-	return s.PostConsume()
+	return lc.Step.PostConsume()
 }
 
-func (s *SimpleStep[T, U]) tearDown() error {
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) TearDown_() error {
 	log.Debug().Msg("SimpleStep tearDown")
-	return s.TearDown()
+	return lc.Step.TearDown()
 }
