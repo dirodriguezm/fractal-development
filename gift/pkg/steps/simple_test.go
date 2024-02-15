@@ -139,3 +139,10 @@ func TestTearDown(t *testing.T) {
 	err := lc.TearDown_()
 	assert.Nil(t, err)
 }
+
+func TestStartSimpleStep(t *testing.T) {
+	batchSize := 10
+	s := CreateStep(batchSize, nil)
+	lc := SimpleStepLifecycle[int, int, int]{s}
+	StartSimpleStep[int, int, int](&lc, s.Consumer, s.Producer, s.Config)
+}
