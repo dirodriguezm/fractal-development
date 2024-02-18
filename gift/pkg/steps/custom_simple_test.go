@@ -5,6 +5,7 @@ import (
 
 	"github.com/dirodriguez/fractal-development/internal/testhelpers"
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
+	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,7 +14,7 @@ type MyStep struct {
 	SimpleStep[int, int, int]
 }
 
-func (s *MyStep) Execute(msg []int) ([]int, error) {
+func (s *MyStep) Execute(msg []int, stepMetrics *metrics.Metrics) ([]int, error) {
 	for i, v := range msg {
 		msg[i] = v * 2
 	}
@@ -38,7 +39,7 @@ func TestExecute(t *testing.T) {
 	})
 	myStep := &MyStep{*s}
 	lc := SimpleStepLifecycle[int, int, int]{myStep}
-	val, err := lc.Execute_([]int{0, 1, 2})
+	val, err := lc.Execute_([]int{0, 1, 2}, myStep.Metrics)
 	assert.Len(t, val, 3)
 	assert.Equal(t, []int{0, 2, 4}, val)
 	assert.Nil(t, err)

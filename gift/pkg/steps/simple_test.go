@@ -73,7 +73,7 @@ func TestPreExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	val, err := lc.PreExecute_([]int{1, 2, 3})
+	val, err := lc.PreExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
 	}
@@ -84,7 +84,7 @@ func TestPostExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	val, err := lc.PostExecute_([]int{1, 2, 3})
+	val, err := lc.PostExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
 	}
@@ -95,7 +95,7 @@ func TestPreProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	res, err := lc.PreProduce_([]int{1, 2, 3})
+	res, err := lc.PreProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -106,7 +106,7 @@ func TestProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	res, err := lc.Produce_([]int{1, 2, 3}, s.Producer)
+	res, err := lc.Produce_([]int{1, 2, 3}, s.Producer, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -117,7 +117,7 @@ func TestPostProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	res, err := lc.PostProduce_([]int{1, 2, 3})
+	res, err := lc.PostProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
 	}
@@ -144,5 +144,5 @@ func TestStartSimpleStep(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
 	lc := SimpleStepLifecycle[int, int, int]{s}
-	StartSimpleStep[int, int, int](&lc, s.Consumer, s.Producer, s.Config)
+	StartSimpleStep[int, int, int](&lc, s.Consumer, s.Producer, s.Config, s.Metrics)
 }
