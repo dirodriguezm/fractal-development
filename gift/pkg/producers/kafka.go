@@ -2,11 +2,10 @@ package producers
 
 import (
 	"errors"
-	"log"
-	"os"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/hamba/avro"
+	"github.com/rs/zerolog/log"
 )
 
 type KafkaProducerParams struct {
@@ -43,12 +42,12 @@ func (kp *KafkaAvroProducer) SerializeMessage(msg interface{}) ([]byte, error) {
 func NewKafkaProducer(config KafkaProducerParams) (*KafkaAvroProducer, error) {
 	producer, err := kafka.NewProducer(&config.KafkaConfig)
 	if err != nil {
-		log.Printf("Failed to create producer: %s", err)
+		log.Err(err).Msg("Failed to create kafka producer")
 		return nil, err
 	}
 	parsedSchema, err := avro.Parse(config.Schema)
 	if err != nil {
-		log.Printf("Failed to parse schema: %s", err)
+		log.Err(err).Msg("Failed to parse schema")
 		return nil, err
 	}
 	kp := KafkaAvroProducer{
@@ -64,12 +63,10 @@ func handleEvents(events chan kafka.Event) {
 		switch ev := e.(type) {
 		case *kafka.Message:
 			if ev.TopicPartition.Error != nil {
-				log.SetOutput(os.Stderr)
-				log.Printf("Failed to deliver message: %v\n", ev.TopicPartition)
-				log.SetOutput(os.Stdout)
+				log.Err(ev.TopicPartition.Error).Msg("Failed to deliver message")
 			}
 		case kafka.Error:
-			log.Printf("Some error during produce: %s", e)
+			log.Err(ev).Msg("Some error during produce")
 		}
 	}
 }
