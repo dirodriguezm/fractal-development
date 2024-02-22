@@ -38,7 +38,7 @@ func TestExecute(t *testing.T) {
 		},
 	})
 	myStep := &MyStep{*s}
-	lc := SimpleStepLifecycle[int, int, int]{myStep}
+	lc := SimpleStepLifecycle[int, int, int]{myStep, nil}
 	val, err := lc.Execute_([]int{0, 1, 2}, myStep.Metrics)
 	assert.Len(t, val, 3)
 	assert.Equal(t, []int{0, 2, 4}, val)

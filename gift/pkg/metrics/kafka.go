@@ -16,6 +16,18 @@ type KafkaAvroMetricsProducer struct {
 	Producer *kafka.Producer
 }
 
+func NewKafkaAvroMetricsProducer(config *KafkaMetricsProducerConfig) (*KafkaAvroMetricsProducer, error) {
+	producer, err := kafka.NewProducer(&config.KafkaConfig)
+	if err != nil {
+		log.Err(err).Msg("Failed to create producer")
+		return nil, err
+	}
+	return &KafkaAvroMetricsProducer{
+		Config:   config,
+		Producer: producer,
+	}, nil
+}
+
 func (kp *KafkaAvroMetricsProducer) SerializeMessage(msg *MetricsAvro, schema avro.Schema) ([]byte, error) {
 	data, err := avro.Marshal(schema, msg)
 	if err != nil {

@@ -1,5 +1,5 @@
 package metrics
 
 type MetricsProducer interface {
-    Produce(met *Metrics)
+    Produce(met *Metrics) error
 }

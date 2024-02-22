@@ -30,7 +30,7 @@ func CreateStep(batchSize int, err error) *SimpleStep[int, int, int] {
 func TestPreConsume(t *testing.T) {
 	batchSize := 10
 	simpleStep := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{simpleStep}
+	lc := SimpleStepLifecycle[int, int, int]{simpleStep, nil}
 	err := lc.PreConsume_()
 	assert.Nil(t, err)
 }
@@ -38,7 +38,7 @@ func TestPreConsume(t *testing.T) {
 func TestConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
@@ -53,7 +53,7 @@ func TestConsume(t *testing.T) {
 func TestConsumeWithError(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, errors.New("test error"))
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
@@ -72,7 +72,7 @@ func TestConsumeWithError(t *testing.T) {
 func TestPreExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	val, err := lc.PreExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
@@ -83,7 +83,7 @@ func TestPreExecute(t *testing.T) {
 func TestPostExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	val, err := lc.PostExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
@@ -94,7 +94,7 @@ func TestPostExecute(t *testing.T) {
 func TestPreProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	res, err := lc.PreProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -105,7 +105,7 @@ func TestPreProduce(t *testing.T) {
 func TestProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	res, err := lc.Produce_([]int{1, 2, 3}, s.Producer, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -116,7 +116,7 @@ func TestProduce(t *testing.T) {
 func TestPostProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	res, err := lc.PostProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -124,10 +124,23 @@ func TestPostProduce(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestPostProduceWithMetricsSender(t *testing.T) {
+	batchSize := 10
+	s := CreateStep(batchSize, nil)
+	metricsProducer := testhelpers.NewTestMetricsProducer(nil)
+	lc := SimpleStepLifecycle[int, int, int]{s, metricsProducer}
+	res, err := lc.PostProduce_([]int{1, 2, 3}, s.Metrics)
+	for i, v := range res {
+		assert.Equal(t, i+1, v)
+	}
+	assert.Nil(t, err)
+	assert.True(t, metricsProducer.Produced)
+}
+
 func TestPostConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	err := lc.PostConsume_()
 	assert.Nil(t, err)
 }
@@ -135,7 +148,7 @@ func TestPostConsume(t *testing.T) {
 func TestTearDown(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	err := lc.TearDown_()
 	assert.Nil(t, err)
 }
@@ -143,6 +156,7 @@ func TestTearDown(t *testing.T) {
 func TestStartSimpleStep(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s}
+	lc := SimpleStepLifecycle[int, int, int]{s, nil}
 	StartSimpleStep[int, int, int](&lc, s.Consumer, s.Producer, s.Config, s.Metrics)
 }
+
