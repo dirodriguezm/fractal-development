@@ -1,4 +1,4 @@
-package steps
+package simple
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package steps
+package simple
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
 	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
+	"github.com/dirodriguez/fractal-development/pkg/steps"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +24,7 @@ func (s *MyStep) Execute(msg []int, stepMetrics *metrics.Metrics) ([]int, error)
 
 func TestExecute(t *testing.T) {
 	batchSize := 10
-	s := NewSimpleStep[int, int, int](StepConfig{
+	s := NewSimpleStep[int, int, int](steps.StepConfig{
 		BatchSize: batchSize,
 		ConsumerConfig: consumers.ConsumerConfig{
 			Type: "test",

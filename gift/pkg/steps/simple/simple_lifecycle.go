@@ -1,4 +1,4 @@
-package steps
+package simple
 
 import (
 	"time"
@@ -6,6 +6,7 @@ import (
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
 	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
+	"github.com/dirodriguez/fractal-development/pkg/steps"
 	"github.com/rs/zerolog/log"
 )
 
@@ -16,13 +17,13 @@ type DeliverySemantic[Input any] struct {
 }
 
 type SimpleStepLifecycle[Input, DTO, Output any] struct {
-	Step             Step[Input, DTO, Output]
+	Step             steps.Step[Input, DTO, Output]
 	MetricsProducer  metrics.MetricsProducer
 	DeliverySemantic *DeliverySemantic[Input]
 }
 
 func NewSimpleStepLifecycle[Input, DTO, Output any](
-	step Step[Input, DTO, Output],
+	step steps.Step[Input, DTO, Output],
 	metricsProducer metrics.MetricsProducer,
 	deliverySemantic string,
 	consumer consumers.Consumer[Input],

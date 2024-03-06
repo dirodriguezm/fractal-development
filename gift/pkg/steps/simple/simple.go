@@ -1,13 +1,14 @@
-package steps
+package simple
 
 import (
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
 	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
+	"github.com/dirodriguez/fractal-development/pkg/steps"
 	"github.com/rs/zerolog/log"
 )
 
-func NewSimpleStep[Input, DTO, Output any](config StepConfig) *SimpleStep[Input, DTO, Output] {
+func NewSimpleStep[Input, DTO, Output any](config steps.StepConfig) *SimpleStep[Input, DTO, Output] {
 	consumer, err := consumers.NewConsumer[Input](config.ConsumerConfig)
 	if err != nil {
 		panic(err)
@@ -27,7 +28,7 @@ func NewSimpleStep[Input, DTO, Output any](config StepConfig) *SimpleStep[Input,
 }
 
 type SimpleStep[Input any, DTO any, Output any] struct {
-	Config   StepConfig
+	Config   steps.StepConfig
 	Consumer consumers.Consumer[Input]
 	Producer producers.Producer
 	Metrics  *metrics.Metrics
@@ -85,7 +86,7 @@ func StartSimpleStep[Input any, DTO any, Output any](
 	lc *SimpleStepLifecycle[Input, DTO, Output],
 	consumer consumers.Consumer[Input],
 	producer producers.Producer,
-	config StepConfig,
+	config steps.StepConfig,
 	stepMetrics *metrics.Metrics,
 ) {
 	log.Debug().Msg("SimpleStep Start")
