@@ -1,16 +1,13 @@
-package testhelpers
+package metrics
 
-import (
-	"github.com/dirodriguez/fractal-development/pkg/metrics"
-	"github.com/rs/zerolog/log"
-)
+import "github.com/rs/zerolog/log"
 
 type TestMetricsProducer struct {
 	Produced bool
 	error error
 }
 
-func (p *TestMetricsProducer) Produce(metrics *metrics.Metrics) error {
+func (p *TestMetricsProducer) Produce(metrics *Metrics) error {
 	if p.error != nil {
 		return p.error
 	}

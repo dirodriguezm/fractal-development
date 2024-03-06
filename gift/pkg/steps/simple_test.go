@@ -6,6 +6,7 @@ import (
 
 	"github.com/dirodriguez/fractal-development/internal/testhelpers"
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
+	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +31,7 @@ func CreateStep(batchSize int, err error) *SimpleStep[int, int, int] {
 func TestPreConsume(t *testing.T) {
 	batchSize := 10
 	simpleStep := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{simpleStep, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](simpleStep, nil, "AT_MOST_ONCE", simpleStep.Consumer, simpleStep.Producer)
 	err := lc.PreConsume_()
 	assert.Nil(t, err)
 }
@@ -38,7 +39,7 @@ func TestPreConsume(t *testing.T) {
 func TestConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
@@ -53,7 +54,7 @@ func TestConsume(t *testing.T) {
 func TestConsumeWithError(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, errors.New("test error"))
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	chVal, chErr := lc.Consume_(s.Consumer)
 	for i := 0; i < batchSize; i++ {
 		select {
@@ -72,7 +73,7 @@ func TestConsumeWithError(t *testing.T) {
 func TestPreExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	val, err := lc.PreExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
@@ -83,7 +84,7 @@ func TestPreExecute(t *testing.T) {
 func TestPostExecute(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	val, err := lc.PostExecute_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range val {
 		assert.Equal(t, i+1, v)
@@ -94,7 +95,7 @@ func TestPostExecute(t *testing.T) {
 func TestPreProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	res, err := lc.PreProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -105,7 +106,7 @@ func TestPreProduce(t *testing.T) {
 func TestProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	res, err := lc.Produce_([]int{1, 2, 3}, s.Producer, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -116,7 +117,7 @@ func TestProduce(t *testing.T) {
 func TestPostProduce(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	res, err := lc.PostProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -127,8 +128,8 @@ func TestPostProduce(t *testing.T) {
 func TestPostProduceWithMetricsSender(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	metricsProducer := testhelpers.NewTestMetricsProducer(nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, metricsProducer}
+	metricsProducer := metrics.NewTestMetricsProducer(nil)
+	lc := NewSimpleStepLifecycle[int, int, int](s, metricsProducer, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	res, err := lc.PostProduce_([]int{1, 2, 3}, s.Metrics)
 	for i, v := range res {
 		assert.Equal(t, i+1, v)
@@ -140,7 +141,7 @@ func TestPostProduceWithMetricsSender(t *testing.T) {
 func TestPostConsume(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	err := lc.PostConsume_()
 	assert.Nil(t, err)
 }
@@ -148,7 +149,7 @@ func TestPostConsume(t *testing.T) {
 func TestTearDown(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
 	err := lc.TearDown_()
 	assert.Nil(t, err)
 }
@@ -156,7 +157,6 @@ func TestTearDown(t *testing.T) {
 func TestStartSimpleStep(t *testing.T) {
 	batchSize := 10
 	s := CreateStep(batchSize, nil)
-	lc := SimpleStepLifecycle[int, int, int]{s, nil}
-	StartSimpleStep[int, int, int](&lc, s.Consumer, s.Producer, s.Config, s.Metrics)
+	lc := NewSimpleStepLifecycle[int, int, int](s, nil, "AT_MOST_ONCE", s.Consumer, s.Producer)
+	StartSimpleStep[int, int, int](lc, s.Consumer, s.Producer, s.Config, s.Metrics)
 }
-

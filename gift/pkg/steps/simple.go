@@ -17,7 +17,7 @@ func NewSimpleStep[Input, DTO, Output any](config StepConfig) *SimpleStep[Input,
 		panic(err)
 	}
 	stepMetrics := &metrics.Metrics{}
-	metrics.ResetMetrics(stepMetrics)
+	stepMetrics.ResetMetrics()
 	return &SimpleStep[Input, DTO, Output]{
 		Config:   config,
 		Consumer: consumer,

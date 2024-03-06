@@ -3,15 +3,33 @@ package steps
 import (
 	"time"
 
-	"github.com/rs/zerolog/log"
-	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
+	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
+	"github.com/rs/zerolog/log"
 )
 
+type DeliverySemantic[Input any] struct {
+	Semantic string
+	Consumer consumers.Consumer[Input]
+	Producer producers.Producer
+}
+
 type SimpleStepLifecycle[Input, DTO, Output any] struct {
-	Step Step[Input, DTO, Output]
-	MetricsProducer metrics.MetricsProducer
+	Step             Step[Input, DTO, Output]
+	MetricsProducer  metrics.MetricsProducer
+	DeliverySemantic *DeliverySemantic[Input]
+}
+
+func NewSimpleStepLifecycle[Input, DTO, Output any](
+	step Step[Input, DTO, Output],
+	metricsProducer metrics.MetricsProducer,
+	deliverySemantic string,
+	consumer consumers.Consumer[Input],
+	producer producers.Producer,
+) *SimpleStepLifecycle[Input, DTO, Output] {
+	stepDeliverySemantic := DeliverySemantic[Input]{Semantic: deliverySemantic, Consumer: consumer, Producer: producer}
+	return &SimpleStepLifecycle[Input, DTO, Output]{Step: step, MetricsProducer: metricsProducer, DeliverySemantic: &stepDeliverySemantic}
 }
 
 func (lc *SimpleStepLifecycle[Input, DTO, Output]) PreConsume_() error {
@@ -26,8 +44,9 @@ func (lc *SimpleStepLifecycle[Input, DTO, Output]) Consume_(consumer consumers.C
 
 func (lc *SimpleStepLifecycle[Input, DTO, Output]) PreExecute_(messages []Input, stepMetrics *metrics.Metrics) ([]DTO, error) {
 	log.Debug().Msg("Messages received. Begin pre execute.")
-	metrics.ResetMetrics(stepMetrics)
+	stepMetrics.ResetMetrics()
 	stepMetrics.TimestampReceived = int64(time.Now().Unix())
+	lc.handleAtMostOnceSemantic()
 	result, err := lc.Step.PreExecute(messages, stepMetrics)
 	return result, err
 }
@@ -65,9 +84,8 @@ func (lc *SimpleStepLifecycle[Input, DTO, Output]) PostProduce_(messages []Outpu
 	stepMetrics.MessagesProcessed = int32(len(messages))
 	stepMetrics.TimestampSent = int64(time.Now().Unix())
 	stepMetrics.ExecutionTime = int32(stepMetrics.TimestampSent - stepMetrics.TimestampReceived)
-	if lc.MetricsProducer != nil {
-		lc.MetricsProducer.Produce(stepMetrics)
-	}
+	lc.sendMetrics(stepMetrics)
+	lc.handleAtLeastOnceSemantic()
 	return output, nil
 }
 
@@ -79,4 +97,22 @@ func (lc *SimpleStepLifecycle[Input, DTO, Output]) PostConsume_() error {
 func (lc *SimpleStepLifecycle[Input, DTO, Output]) TearDown_() error {
 	log.Debug().Msg("Stopping step. Begin tear down.")
 	return lc.Step.TearDown()
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) sendMetrics(stepMetrics *metrics.Metrics) {
+	if lc.MetricsProducer != nil {
+		lc.MetricsProducer.Produce(stepMetrics)
+	}
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) handleAtLeastOnceSemantic() {
+	if lc.DeliverySemantic.Semantic == "AT_LEAST_ONCE" {
+		lc.DeliverySemantic.Consumer.Commit()
+	}
+}
+
+func (lc *SimpleStepLifecycle[Input, DTO, Output]) handleAtMostOnceSemantic() {
+	if lc.DeliverySemantic.Semantic == "AT_MOST_ONCE" {
+		lc.DeliverySemantic.Consumer.Commit()
+	}
 }

@@ -26,22 +26,22 @@ type MetricsAvro struct {
 
 type ExtraMetrics map[string]any
 
-func ResetMetrics(metrics *Metrics) {
-	metrics.StepName = ""
-	metrics.TimestampReceived = 0
-	metrics.TimestampSent = 0
-	metrics.ExecutionTime = 0
-	metrics.MessagesProcessed = 0
-	metrics.ExtraMetrics = make(ExtraMetrics)
+func (stepMetrics *Metrics) ResetMetrics() {
+	stepMetrics.StepName = ""
+	stepMetrics.TimestampReceived = 0
+	stepMetrics.TimestampSent = 0
+	stepMetrics.ExecutionTime = 0
+	stepMetrics.MessagesProcessed = 0
+	stepMetrics.ExtraMetrics = make(ExtraMetrics)
 }
 
-func (metrics *Metrics) AsAvro() *MetricsAvro {
+func (stepMetrics *Metrics) AsAvro() *MetricsAvro {
 	return &MetricsAvro{
-		StepName:          metrics.StepName,
-		TimestampReceived: metrics.TimestampReceived,
-		TimestampSent:     metrics.TimestampSent,
-		ExecutionTime:     metrics.ExecutionTime,
-		MessagesProcessed: metrics.MessagesProcessed,
-		ExtraMetrics:      metrics.ExtraMetrics,
+		StepName:          stepMetrics.StepName,
+		TimestampReceived: stepMetrics.TimestampReceived,
+		TimestampSent:     stepMetrics.TimestampSent,
+		ExecutionTime:     stepMetrics.ExecutionTime,
+		MessagesProcessed: stepMetrics.MessagesProcessed,
+		ExtraMetrics:      stepMetrics.ExtraMetrics,
 	}
 }

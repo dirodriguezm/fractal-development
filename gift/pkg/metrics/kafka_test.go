@@ -37,7 +37,7 @@ func TestProduce(t *testing.T) {
 		Producer: producer,
 	}
 	// Create a new Metrics
-	metrics := &Metrics{
+	stepMetrics := &Metrics{
 		TimestampReceived: 1000,
 		TimestampSent:     2000,
 		ExecutionTime:     1000,
@@ -62,7 +62,7 @@ func TestProduce(t *testing.T) {
 		]
 	}`)
 	// Call Produce with the Metrics and schema
-	err = metricsProducer.Produce(metrics.AsAvro(), schema)
+	err = metricsProducer.Produce(stepMetrics.AsAvro(), schema)
 	// Check if the error is nil
 	assert.Nil(t, err)
 	metricsProducer.Producer.Flush(1000)
