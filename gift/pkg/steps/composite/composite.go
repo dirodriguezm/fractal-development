@@ -57,11 +57,44 @@ func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PreConsume(
 	return nil
 }
 
-func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PreExecute(messages []Input, stepMetrics *metrics.Metrics) ([]DTO, error) {
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PreExecute(messages []Input, stepMetrics *metrics.Metrics) ([]InternalOut, error) {
 	log.Debug().Msg("CompositeStep PreExecute")
+	var internalOut []InternalOut
+	for _, message := range messages {
+		internalOut = append(internalOut, any(message).(InternalOut))
+	}
+	return internalOut, nil
+}
+
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PostExecute(messages []InternalIn, stepMetrics *metrics.Metrics) ([]DTO, error) {
+	log.Debug().Msg("CompositeStep PostExecute")
 	var dtos []DTO
 	for _, message := range messages {
 		dtos = append(dtos, any(message).(DTO))
 	}
 	return dtos, nil
+}
+
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PreProduce(messages []DTO, stepMetrics *metrics.Metrics) ([]Output, error) {
+	log.Debug().Msg("CompositeStep PreProduce")
+	var outputs []Output
+	for _, message := range messages {
+		outputs = append(outputs, any(message).(Output))
+	}
+	return outputs, nil
+}
+
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PostProduce(messages []Output, stepMetrics *metrics.Metrics) ([]Output, error) {
+	log.Debug().Msg("CompositeStep PostProduce")
+	return messages, nil
+}
+
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) PostConsume() error {
+	log.Debug().Msg("CompositeStep PostConsume")
+	return nil
+}
+
+func (s *CompositeStep[Input, DTO, InternalOut, InternalIn, Output]) TearDown() error {
+	log.Debug().Msg("CompositeStep TearDown")
+	return nil
 }
