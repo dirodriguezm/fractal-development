@@ -6,7 +6,7 @@ import (
 	"github.com/dirodriguez/fractal-development/pkg/producers"
 )
 
-type Step[Input any, DTO any, Output any] interface {
+type SimpleStep[Input any, DTO any, Output any] interface {
 	// gets called before the first consume operation
 	PreConsume() error
 	// gets called before execute on each batch
@@ -25,13 +25,23 @@ type Step[Input any, DTO any, Output any] interface {
 	TearDown() error
 }
 
+type CompositeStep[Input, DTO, InternalOut, InternalIn, Output any] interface {
+	PreConsume() error
+	PreExecute(messages []Input, stepMetrics *metrics.Metrics) ([]InternalOut, error)
+	PostExecute(messages []InternalIn, stepMetrics *metrics.Metrics) ([]DTO, error)
+	PreProduce(messages []DTO, stepMetrics *metrics.Metrics) ([]Output, error)
+	PostProduce(messages []Output, stepMetrics *metrics.Metrics) ([]Output, error)
+	PostConsume() error
+	TearDown() error
+}
+
 type StepConfig struct {
 	BatchSize      int
 	ConsumerConfig consumers.ConsumerConfig
 	ProducerConfig producers.ProducerConfig
 }
 
-type LifeCycle[Input, DTO, Output any] interface {
+type SimpleLifeCycle[Input, DTO, Output any] interface {
 	// gets called before the first consume operation
 	PreConsume_() error
 	// gets data from the consumer
@@ -54,3 +64,25 @@ type LifeCycle[Input, DTO, Output any] interface {
 	TearDown_() error
 }
 
+type CompositeLifeCycle[Input, DTO, InternalOut, InternalIn, Output any] interface {
+	PreConsume_() error
+	Consume_() (<-chan []Input, <-chan error)
+	PreExecute_(messages []Input, stepMetrics *metrics.Metrics) ([]InternalOut, error)
+	Execute_(
+		messages []InternalOut,
+		internalProducer producers.Producer,
+		internalConsumer consumers.Consumer[InternalIn],
+	) ([]InternalIn, error)
+	PostExecute_(messages []InternalIn, stepMetrics *metrics.Metrics) ([]DTO, error)
+	PreProduce_(messages []DTO, stepMetrics *metrics.Metrics) ([]Output, error)
+	Produce_(messages []Output, stepMetrics *metrics.Metrics) ([]Output, error)
+	PostProduce_(messages []Output, stepMetrics *metrics.Metrics) ([]Output, error)
+	PostConsume_() error
+	TearDown_() error
+}
+
+type DeliverySemantic[Input any] struct {
+	Semantic string
+	Consumer consumers.Consumer[Input]
+	Producer producers.Producer
+}

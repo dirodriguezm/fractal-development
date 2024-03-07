@@ -10,26 +10,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type DeliverySemantic[Input any] struct {
-	Semantic string
-	Consumer consumers.Consumer[Input]
-	Producer producers.Producer
-}
 
 type SimpleStepLifecycle[Input, DTO, Output any] struct {
-	Step             steps.Step[Input, DTO, Output]
+	Step             steps.SimpleStep[Input, DTO, Output]
 	MetricsProducer  metrics.MetricsProducer
-	DeliverySemantic *DeliverySemantic[Input]
+	DeliverySemantic *steps.DeliverySemantic[Input]
 }
 
 func NewSimpleStepLifecycle[Input, DTO, Output any](
-	step steps.Step[Input, DTO, Output],
+	step steps.SimpleStep[Input, DTO, Output],
 	metricsProducer metrics.MetricsProducer,
 	deliverySemantic string,
 	consumer consumers.Consumer[Input],
 	producer producers.Producer,
 ) *SimpleStepLifecycle[Input, DTO, Output] {
-	stepDeliverySemantic := DeliverySemantic[Input]{Semantic: deliverySemantic, Consumer: consumer, Producer: producer}
+	stepDeliverySemantic := steps.DeliverySemantic[Input]{Semantic: deliverySemantic, Consumer: consumer, Producer: producer}
 	return &SimpleStepLifecycle[Input, DTO, Output]{Step: step, MetricsProducer: metricsProducer, DeliverySemantic: &stepDeliverySemantic}
 }
 
