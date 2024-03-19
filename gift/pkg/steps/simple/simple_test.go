@@ -8,11 +8,12 @@ import (
 	"github.com/dirodriguez/fractal-development/pkg/consumers"
 	"github.com/dirodriguez/fractal-development/pkg/metrics"
 	"github.com/dirodriguez/fractal-development/pkg/producers"
+	"github.com/dirodriguez/fractal-development/pkg/steps"
 	"github.com/stretchr/testify/assert"
 )
 
 func CreateStep(batchSize int, err error) *SimpleStep[int, int, int] {
-	return NewSimpleStep[int, int, int](StepConfig{
+	return NewSimpleStep[int, int, int](steps.StepConfig{
 		BatchSize: batchSize,
 		ConsumerConfig: consumers.ConsumerConfig{
 			Type: "test",
