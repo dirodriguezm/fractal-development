@@ -14,13 +14,13 @@ type CompositeStepConfig struct {
 	InternalProducerConfig producers.ProducerConfig
 }
 
-type CompositeStep[Input, DTO, InternalOut, InternalIn, Output any]  struct {
-	Config CompositeStepConfig
-	InputConsumer consumers.Consumer[Input]
-	OutputProducer producers.Producer
+type CompositeStep[Input, DTO, InternalOut, InternalIn, Output any] struct {
+	Config           CompositeStepConfig
+	InputConsumer    consumers.Consumer[Input]
+	OutputProducer   producers.Producer
 	InternalConsumer consumers.Consumer[InternalIn]
 	InternalProducer producers.Producer
-	Metrics *metrics.Metrics
+	Metrics          *metrics.Metrics
 }
 
 func NewCompositeStep[Input, DTO, InternalOut, InternalIn, Output any](config CompositeStepConfig) *CompositeStep[Input, DTO, InternalOut, InternalIn, Output] {
@@ -43,12 +43,12 @@ func NewCompositeStep[Input, DTO, InternalOut, InternalIn, Output any](config Co
 		panic(err)
 	}
 	return &CompositeStep[Input, DTO, InternalOut, InternalIn, Output]{
-		Config: config,
-		InputConsumer: consumer,
-		OutputProducer: producer,
+		Config:           config,
+		InputConsumer:    consumer,
+		OutputProducer:   producer,
 		InternalConsumer: internalConsumer,
 		InternalProducer: internalProducer,
-		Metrics: stepMetrics,
+		Metrics:          stepMetrics,
 	}
 }
 

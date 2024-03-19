@@ -11,14 +11,33 @@ import (
 )
 
 type CompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output any] struct {
-	Step steps.CompositeStep[Input, DTO, InternalOut, InternalIn, Output]
-	MetricsProducer metrics.MetricsProducer
-	DeliverySemantic *steps.DeliverySemantic[Input]
+	Step                     steps.CompositeStep[Input, DTO, InternalOut, InternalIn, Output]
+	MetricsProducer          metrics.MetricsProducer
+	DeliverySemantic         *steps.DeliverySemantic[Input]
+	InternalDeliverySemantic *steps.DeliverySemantic[InternalIn]
+}
+
+func NewCompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output any](
+	step steps.CompositeStep[Input, DTO, InternalOut, InternalIn, Output],
+	metricsProducer metrics.MetricsProducer,
+	deliverySemantic string,
+	internalDeliverySemantic string,
+	consumer consumers.Consumer[Input],
+	producer producers.Producer,
+	internalConsumer consumers.Consumer[InternalIn],
+	internalProducer producers.Producer,
+) *CompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output] {
+	return &CompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output]{
+		Step:                     step,
+		MetricsProducer:          metricsProducer,
+		DeliverySemantic:         &steps.DeliverySemantic[Input]{Semantic: deliverySemantic, Consumer: consumer, Producer: producer},
+		InternalDeliverySemantic: &steps.DeliverySemantic[InternalIn]{Semantic: internalDeliverySemantic, Consumer: internalConsumer, Producer: internalProducer},
+	}
 }
 
 func (lc CompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output]) PreConsume_() error {
 	log.Debug().Msg("CompositeLifeCycle PreConsume")
-	return nil
+	return lc.Step.PreConsume()
 }
 
 func (lc CompositeLifecycle[Input, DTO, InternalOut, InternalIn, Output]) Consume_(consumer consumers.Consumer[Input]) (<-chan Input, <-chan error) {
